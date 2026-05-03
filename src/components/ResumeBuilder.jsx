@@ -29,7 +29,7 @@ export const ResumeBuilder = () => {
         try {
             const formData = new FormData();
             formData.append('file', file);
-            const response = await axios.post("http://localhost:3000/scanResume", formData);
+            const response = await axios.post("/scanResume", formData);
             const data = response.data.data;
             const parsedData = JSON.parse(data);
             reset(parsedData);

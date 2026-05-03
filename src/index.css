@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Base font: Fredoka from Google Fonts */
+body {
+    font-family: 'Fredoka', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}

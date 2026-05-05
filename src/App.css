@@ -1,1 +1,45 @@
-@import "tailwindcss";
+/* ============================================
+	 RESPONSIVE UPGRADE — 2026-05-05
+	 Breakpoints: 320 / 480 / 600 / 768 / 1024 / 1440px
+	 Approach: Mobile-first
+	 Modified: Shared app shell, global controls, overflow guardrails
+	 ============================================ */
+
+html,
+body,
+#root {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    background: #F5F8FF;
+    color: #0F2260;
+    overflow-x: clip;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+button {
+    min-height: 44px;
+}
+
+input,
+textarea,
+select {
+    min-height: 44px;
+}
+
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+}

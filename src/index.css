@@ -1,6 +1,12 @@
+/* ============================================
+   RESPONSIVE UPGRADE — 2026-05-05
+   Breakpoints: 320 / 480 / 600 / 768 / 1024 / 1440px
+   Approach: Mobile-first
+   Modified: Tailwind entrypoint and base font stack
+   ============================================ */
+
 @import "tailwindcss";
 
-/* Base font: Fredoka from Google Fonts */
 body {
     font-family: 'Fredoka', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }

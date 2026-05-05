@@ -1,3 +1,10 @@
+/* ============================================
+  RESPONSIVE UPGRADE — 2026-05-05
+  Breakpoints: 320 / 480 / 600 / 768 / 1024 / 1440px
+  Approach: Mobile-first
+  Modified: App shell, roast view spacing, action layout
+  ============================================ */
+
 import { useState } from 'react'
 import './App.css'
 import { Navbar } from './components/Navbar'
@@ -30,31 +37,43 @@ function App() {
   };
 
   return (
-    <div className='flex h-screen'>
+    <div className='min-h-dvh bg-[#F5F8FF] text-[#0F2260] flex flex-col'>
       <Navbar active={active} onNavigate={setActive} />
 
-      <div className='flex-1 bg-[#F5F8FF] overflow-y-auto'>
-        <div className='max-w-7xl mx-auto p-6'>
+      <main className='flex-1 min-w-0 overflow-x-clip overflow-y-auto'>
+        <div className='mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8'>
           {active === 'builder' && <ResumeBuilder />}
+
           {active === 'roaster' && (
-            <div>
+            <div className='space-y-6'>
               {!roastData ? (
                 <FileUploader onRoastReady={handleRoastReady} />
               ) : (
-                <div className='bg-[#FFFFFF] border border-[#D4E0F5] rounded p-6 shadow-sm'>
+                <div className='rounded-2xl border border-[#D4E0F5] bg-[#FFFFFF] p-4 shadow-sm sm:p-6 lg:p-8'>
                   <div data-roast-results>
                     <ResumeResults data={roastData} />
                   </div>
-                  <div className='mt-4 flex gap-2'>
-                    <button onClick={captureScreenshot} className='bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-4 py-2 rounded'>Download Image</button>
-                    <button onClick={handleClearRoast} className='bg-white border border-[#D4E0F5] text-[#0F2260] px-4 py-2 rounded'>Back</button>
+
+                  <div className='mt-4 flex flex-col gap-3 sm:flex-row'>
+                    <button
+                      onClick={captureScreenshot}
+                      className='inline-flex min-h-11 items-center justify-center rounded-md bg-[#2563EB] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1D4ED8]'
+                    >
+                      Download Image
+                    </button>
+                    <button
+                      onClick={handleClearRoast}
+                      className='inline-flex min-h-11 items-center justify-center rounded-md border border-[#D4E0F5] bg-white px-4 py-3 text-sm font-semibold text-[#0F2260] transition-colors hover:bg-[#F5F8FF]'
+                    >
+                      Back
+                    </button>
                   </div>
                 </div>
               )}
             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   )
 }

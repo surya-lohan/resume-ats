@@ -1,3 +1,10 @@
+/* ============================================
+    RESPONSIVE UPGRADE — 2026-05-05
+    Breakpoints: 320 / 480 / 600 / 768 / 1024 / 1440px
+    Approach: Mobile-first
+    Modified: Full-width top navigation for all breakpoints
+    ============================================ */
+
 import React from 'react'
 import { IoPlayForward } from "react-icons/io5";
 import { GiRoastChicken } from "react-icons/gi";
@@ -9,19 +16,19 @@ export const Navbar = ({ active = 'builder', onNavigate = () => { } }) => {
     ];
 
     return (
-        <aside className='w-50 h-screen shrink-0 bg-[#1E4DB7] text-white flex flex-col justify-between'>
-            <div>
-                <div className='px-4 py-6 flex items-center gap-3'>
-                    <div className='w-10 h-10 rounded-full bg-[#ffffff33] flex items-center justify-center'>
-                        <span className='font-semibold text-lg'>RB</span>
+        <header className='sticky top-0 z-30 w-full border-b border-white/15 bg-[#1E4DB7] text-white'>
+            <div className='mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8'>
+                <div className='flex items-center gap-3'>
+                    <div className='flex h-11 w-11 items-center justify-center rounded-full bg-[#ffffff33]'>
+                        <span className='text-lg font-semibold'>RB</span>
                     </div>
                     <div>
-                        <div className='text-white font-semibold text-lg'>Resume Suite</div>
-                        <div className='text-[#ffffffcc] text-xs'>Build • Roaster</div>
+                        <div className='text-base font-semibold text-white sm:text-lg'>Resume Suite</div>
+                        <div className='text-xs text-[#ffffffcc]'>Build • Roaster</div>
                     </div>
                 </div>
 
-                <nav className='mt-8 px-2 flex flex-col gap-1'>
+                <nav className='grid grid-cols-2 gap-2 sm:w-auto sm:grid-cols-none sm:grid-flow-col sm:auto-cols-max'>
                     {nav.map(item => {
                         const isActive = active === item.id;
                         return (
@@ -29,16 +36,18 @@ export const Navbar = ({ active = 'builder', onNavigate = () => { } }) => {
                                 key={item.id}
                                 type='button'
                                 onClick={() => onNavigate(item.id)}
-                                className={isActive ? 'flex items-center gap-3 w-full text-left px-4 py-3 rounded-r-md transition-colors border-l-4 border-white font-semibold text-white' : 'flex items-center gap-3 w-full text-left px-4 py-3 rounded-r-md transition-colors text-[#ffffffe6] hover:bg-[#ffffff1a]'}
+                                className={isActive
+                                    ? 'flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/15 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors'
+                                    : 'flex min-h-11 items-center justify-center gap-2 rounded-xl border border-transparent bg-white/5 px-4 py-3 text-sm text-[#ffffffe6] transition-colors hover:bg-white/10'
+                                }
                             >
-                                <span className='text-white'>{item.icon}</span>
-                                <span className={isActive ? 'text-white' : 'text-[#ffffffe6]'}>{item.label}</span>
+                                <span className='shrink-0 text-white'>{item.icon}</span>
+                                <span className='truncate text-white/95'>{item.label}</span>
                             </button>
                         )
                     })}
                 </nav>
             </div>
-
-        </aside>
+        </header>
     )
 }

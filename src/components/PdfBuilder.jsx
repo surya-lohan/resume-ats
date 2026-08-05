@@ -191,28 +191,30 @@ function MyDocument({ data = {} }) {
                     ))}
                 </Section>
 
-                <Section title="Experience">
-                    {experience.map((job, index) => (
-                        <View key={`exp-${index}`} style={styles.itemSpacing}>
-                            <View style={styles.row}>
-                                <Text style={styles.itemTitle}>{job.role || 'Job Title'}</Text>
-                                <Text style={styles.itemTitle}>{job.duration || 'Jan 2024 - Present'}</Text>
+                {experience && experience.length > 0 && (
+                    <Section title="Experience">
+                        {experience.map((job, index) => (
+                            <View key={`exp-${index}`} style={styles.itemSpacing}>
+                                <View style={styles.row}>
+                                    <Text style={styles.itemTitle}>{job.role || 'Job Title'}</Text>
+                                    <Text style={styles.itemTitle}>{job.duration || 'Jan 2024 - Present'}</Text>
+                                </View>
+                                <Text style={styles.itemMetaItalic}>{job.company || 'Company Name'}</Text>
+                                <View style={styles.bulletList}>
+                                    {bulletLines(
+                                        job.description,
+                                        'Developed and maintained web applications using React and Node.js.'
+                                    ).map((bullet, bulletIndex) => (
+                                        <View key={`exp-${index}-bullet-${bulletIndex}`} style={styles.bulletRow}>
+                                            <Text style={styles.bullet}>•</Text>
+                                            <Text style={styles.bulletText}>{bullet}</Text>
+                                        </View>
+                                    ))}
+                                </View>
                             </View>
-                            <Text style={styles.itemMetaItalic}>{job.company || 'Company Name'}</Text>
-                            <View style={styles.bulletList}>
-                                {bulletLines(
-                                    job.description,
-                                    'Developed and maintained web applications using React and Node.js.'
-                                ).map((bullet, bulletIndex) => (
-                                    <View key={`exp-${index}-bullet-${bulletIndex}`} style={styles.bulletRow}>
-                                        <Text style={styles.bullet}>•</Text>
-                                        <Text style={styles.bulletText}>{bullet}</Text>
-                                    </View>
-                                ))}
-                            </View>
-                        </View>
-                    ))}
-                </Section>
+                        ))}
+                    </Section>
+                )}
 
                 <Section title="Projects">
                     {projects.map((project, index) => (

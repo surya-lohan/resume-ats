@@ -15,7 +15,7 @@ export default function ResumePreview({ data }) {
     const skills = data?.skills || [];
 
     return (
-        <div className='mx-auto w-full max-w-[840px] rounded-2xl border border-[#D4E0F5] bg-white p-5 text-black shadow-2xl font-serif box-border overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] lg:sticky lg:top-6 lg:max-h-[calc(100dvh-7rem)] lg:p-10'>
+        <div className='mx-auto w-full max-w-210 rounded-2xl border border-[#D4E0F5] bg-white p-5 text-black shadow-2xl font-serif box-border overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] lg:sticky lg:top-6 lg:max-h-[calc(100dvh-7rem)] lg:p-10'>
 
             {/* 1. HEADER (Name & Contact) */}
             <div className='mb-6 text-center'>

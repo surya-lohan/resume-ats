@@ -82,7 +82,10 @@ export const ResumeBuilder = () => {
     })
 
     const removeExperienceSection = () => {
-        fields.forEach((_, index) => remove(index));
+        reset({
+            ...liveResumeData,
+            experience: []
+        });
     }
 
     return (

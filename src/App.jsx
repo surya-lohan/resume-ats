@@ -37,11 +37,11 @@ function App() {
   };
 
   return (
-    <div className='min-h-dvh bg-[#F5F8FF] text-[#0F2260] flex flex-col'>
+    <div className='min-h-screen bg-[#F5F8FF] text-[#0F2260] flex flex-col'>
       <Navbar active={active} onNavigate={setActive} />
 
-      <main className='flex-1 min-w-0 overflow-x-clip overflow-y-auto'>
-        <div className='mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8'>
+      <main className='flex-1 w-full min-w-0 overflow-x-clip overflow-y-auto'>
+        <div className='w-full px-2 py-2 sm:px-6 sm:py-6 lg:px-2 lg:py-2'>
           {active === 'builder' && <ResumeBuilder />}
 
           {active === 'roaster' && (

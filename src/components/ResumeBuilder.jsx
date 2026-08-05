@@ -1,9 +1,4 @@
-/* ============================================
-    RESPONSIVE UPGRADE — 2026-05-05
-    Breakpoints: 320 / 480 / 600 / 768 / 1024 / 1440px
-    Approach: Mobile-first
-    Modified: Builder shell, form grid, preview stacking, action controls
-    ============================================ */
+
 
 import React, { useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
@@ -20,10 +15,10 @@ export const ResumeBuilder = () => {
         defaultValues: {
             personalInfo: {
                 fullName: "",
-                email: "Email Address",
-                phone: "Phone Number",
-                linkedin: "linkedin.com/in/yourprofile",
-                github: "github.com/yourusername",
+                email: "",
+                phone: "",
+                linkedin: "",
+                github: "",
                 description: ""
             },
             education: [{ college: "", degree: "", year: "", cgpa: "" }],
@@ -56,8 +51,6 @@ export const ResumeBuilder = () => {
         }
     }
 
-
-
     const liveResumeData = watch();
 
     const { fields, append, remove } = useFieldArray({
@@ -69,7 +62,6 @@ export const ResumeBuilder = () => {
         control,
         name: "projects"
     })
-
 
     const { fields: skillFields, append: appendSkill, remove: removeSkill } = useFieldArray({
         control,
@@ -93,7 +85,7 @@ export const ResumeBuilder = () => {
             <div className='w-full border-b border-border bg-surface py-4'>
                 <div className='mx-auto w-full max-w-7xl space-y-4 px-4 sm:px-6 lg:px-8'>
                     <div>
-                        <h3 className='text-base font-semibold text-[#3B5EA6] sm:text-lg'>Note: <p className='  text-sm leading-6 text-[#7A90B4]'>Desktop is recommended for the best experience.</p> </h3>
+                        <h3 className='text-base font-semibold text-[#3B5EA6] sm:text-lg'>Note: <p className='text-sm leading-6 text-[#7A90B4] inline-block sm:inline'>Desktop is recommended for the best experience.</p> </h3>
                         <p className='text-sm leading-6 text-[#7A90B4]'>
                             This layout is research-backed and ATS-optimized — changing the structure may hurt your results. Please keep it as-is. Upload your resume to auto-fill, or enter details manually. Always review before finalizing.
                         </p>
@@ -131,8 +123,11 @@ export const ResumeBuilder = () => {
                 </div>
             </div>
 
-            <div className='mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-6 sm:px-6 sm:pb-8 lg:px-8 xl:flex-row xl:items-start'>
-                <div className='flex w-full flex-col gap-4 rounded-2xl border border-[#D4E0F5] bg-[#FFFFFF] p-4 shadow-sm sm:p-6 xl:max-w-[460px] xl:flex-none xl:self-start xl:sticky xl:top-6 xl:max-h-[calc(100dvh-7rem)] xl:overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
+            {/* Main Layout Container (Splits at 1024px / lg) */}
+            <div className='flex w-full flex-col gap-6 px-2 pb-2 sm:px-6 sm:pb-8 lg:flex-row lg:items-start lg:px-4'>
+
+                {/* Left Section: Form Controls (40% width on >= 1024px) */}
+                <div className='flex w-full flex-col gap-4 rounded-2xl border border-[#D4E0F5] bg-[#FFFFFF] p-4 shadow-sm sm:p-6 lg:w-[40%] lg:flex-none lg:self-start lg:sticky lg:top-6 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
                     <div className='space-y-6'>
                         <div className='space-y-2'>
                             <label className='block text-xs font-medium text-[#7A90B4]'>Full name</label>
@@ -222,15 +217,7 @@ export const ResumeBuilder = () => {
 
                         <div className='space-y-3'>
                             <h3 className='text-base font-semibold text-[#0F2260] sm:text-lg'>Experience</h3>
-                            {fields.length > 0 && (
-                                <button
-                                    type='button'
-                                    onClick={() => removeExperienceSection()}
-                                    className='inline-flex min-h-11 w-full items-center justify-center rounded-md bg-red-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-600'
-                                >
-                                    Remove Experience Section
-                                </button>
-                            )}
+
                             {fields.map((item, index) => (
                                 <div key={item.id} className='space-y-3 rounded-lg border border-[#D4E0F5] bg-[#FFFFFF] p-4 transition hover:bg-[#EEF3FB]'>
                                     <input
@@ -265,6 +252,7 @@ export const ResumeBuilder = () => {
                                             Remove
                                         </button>
                                     )}
+
                                 </div>
                             ))}
 
@@ -276,7 +264,15 @@ export const ResumeBuilder = () => {
                                 + Add experience
                             </button>
                         </div>
-
+                        {fields.length > 0 && (
+                            <button
+                                type='button'
+                                onClick={() => removeExperienceSection()}
+                                className='inline-flex items-center justify-center rounded-md bg-red-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-600'
+                            >
+                                Remove Experience Section
+                            </button>
+                        )}
                         <div className='space-y-3'>
                             <h3 className='text-base font-semibold text-[#0F2260] sm:text-lg'>Projects</h3>
                             {projectFields.map((p, i) => (
@@ -350,7 +346,8 @@ export const ResumeBuilder = () => {
                     </div>
                 </div>
 
-                <div className='w-full min-w-0'>
+                {/* Right Section: Resume Preview (60% width on >= 1024px) */}
+                <div className='w-full min-w-0 lg:w-[60%] lg:flex-none lg:sticky lg:top-6 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
                     <ResumePreview data={liveResumeData} />
                 </div>
             </div>

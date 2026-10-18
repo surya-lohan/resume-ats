@@ -9,6 +9,7 @@ export default defineConfig({
       '/uploadFile': 'http://localhost:3000',
       '/scanResume': 'http://localhost:3000',
       '/helloText': 'http://localhost:3000',
+      '/fixresume': 'http://localhost:3000'
     },
   },
 })

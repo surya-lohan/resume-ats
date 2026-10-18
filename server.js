@@ -185,7 +185,7 @@ No "Here is your roast:". Just raw JSON, starting with { and ending with }.
 ═══════════════════════════════════════════════
 INTERNAL PROCESS (do this silently before responding)
 ═══════════════════════════════════════════════
-
+Step 0 — Always keep in mind that the current ongoing year is 2026.
 Step 1 — Read the entire resume text carefully.
 Step 2 — Score each of the 6 ATS rubric dimensions. Sum them.
 Step 3 — Identify the 3–7 most glaring problems (these become red_flags).
@@ -293,6 +293,94 @@ REQUIRED JSON SCHEMA:
 
   } catch (error) {
     console.error("Error parsing resume", error);
+    res.status(500).json({ error: "Something broke." });
+  }
+})
+
+app.post('/fixresume', async (req, res) => {
+  try {
+    if (!req.body || (typeof req.body === 'object' && Object.keys(req.body).length === 0)) {
+      return res.status(400).json({
+        message: "Unable to find data!"
+      })
+    }
+
+    const roastData = req.body;
+    const rawResumeText = roastData.rawResumeText || "";
+    const actionableFixes = Array.isArray(roastData.actionable_fixes)
+      ? roastData.actionable_fixes.map((fix, idx) => `${idx + 1}. ${fix}`).join("\n")
+      : (typeof roastData.actionable_fixes === 'string' ? roastData.actionable_fixes : "");
+    const redFlags = Array.isArray(roastData.red_flags)
+      ? roastData.red_flags.map((flag, idx) => `${idx + 1}. ${flag}`).join("\n")
+      : "";
+    const targetRole = roastData.targetRole || "";
+
+    const userPrompt = `Please fix and reconstruct this candidate's resume into the required JSON schema, applying the audit fixes and optimizing for high ATS compatibility:
+
+${targetRole ? `TARGET ROLE:\n${targetRole}\n\n` : ''}${actionableFixes ? `ACTIONABLE FIXES TO IMPLEMENT:\n${actionableFixes}\n\n` : ''}${redFlags ? `RED FLAGS TO RESOLVE:\n${redFlags}\n\n` : ''}ORIGINAL RESUME CONTENT:
+${rawResumeText || JSON.stringify(roastData, null, 2)}`;
+
+    const chatCompletion = await client.chat.send({
+      chatRequest: {
+        model: "nvidia/nemotron-3-ultra-550b-a55b:free",
+        messages: [
+          {
+            role: "system",
+            content: `You are a Senior level Software Engineer and resume optimization expert. Your task is to extract information from the provided resume text and optimize it using the provided actionable fixes and red flags to produce an updated output as a STRICTLY valid JSON object.
+CRITICAL INSTRUCTIONS:
+1. Output ONLY valid JSON. Do not include any conversational text, greetings, explanations, or markdown formatting (do not use \`\`\`json backticks). 
+2. You must strictly adhere to the exact JSON schema provided below. Do not add, remove, or rename any keys.
+3. If a piece of information is missing from the text, you MUST use an empty string "". Do NOT use null, undefined, or "N/A".
+4. For arrays (education, experience, projects, skills), create a new object in the array for each distinct entry found in the text. If no entries are found for a category, return an array with one empty object matching the schema.
+5. Dates and durations should be extracted exactly as written (e.g., "Jan 2024 - Present").
+6. Rewrite and polish experience bullets and project descriptions to include measurable metrics, strong action verbs, and keyword optimization based on the actionable fixes.
+7. DO NOT RETURN AN EMPTY JSON OBJECT OR EMPTY ARRAYS. Extract all candidate information from the original resume content.
+
+REQUIRED JSON SCHEMA:
+{
+  "personalInfo": {
+    "fullName": "",
+    "email": "",
+    "phone": "",
+    "linkedin": "",
+    "github": "",
+    "description": ""
+  },
+  "education": [
+    { "college": "", "degree": "", "year": "", "cgpa": "", "location": "" }
+  ],
+  "experience": [
+    { "company": "", "role": "", "description": "", "duration": "" }
+  ],
+  "projects": [
+    { "name": "", "description": "", "tools": "", "duration": "" }
+  ],
+  "skills": [
+    { "Languages": "", "Frameworks": "", "Tools": "" }
+  ]
+}`
+          },
+          {
+            role: "user",
+            content: userPrompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.2,
+        max_completion_tokens: 3000
+      }
+    })
+
+    let parsedData = (chatCompletion).choices[0]?.message.content || "{}";
+    parsedData = parsedData.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+
+    res.json({
+      message: "Resume updated successfully",
+      data: parsedData
+    });
+
+  } catch (error) {
+    console.error("Error updating resume", error);
     res.status(500).json({ error: "Something broke." });
   }
 })

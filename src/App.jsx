@@ -25,20 +25,21 @@ function App() {
     const handleFixInBuilder = async () => {
         if (roastData?.uploadedFile) {
             setIsBridging(true)
+            console.log(roastData)
             try {
-                const formData = new FormData()
-                formData.append('file', roastData.uploadedFile)
-                const res = await axios.post('/scanResume', formData)
+                //Setting up data
+                const res = await axios.post('/fixresume', roastData)
                 const raw = res.data.data
                 const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
-                setBuilderData(parsed)
+                setBuilderData(parsed);
             } catch (err) {
                 console.error('Auto-scan error in bridge:', err)
             } finally {
                 setIsBridging(false)
+                setActive('builder')
             }
         }
-        setActive('builder')
+
     }
 
     const captureScreenshot = () => {

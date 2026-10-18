@@ -1,5 +1,5 @@
-import React from 'react'
 import { PDFDownloadLink, Document, Page, StyleSheet, Text, View, Font } from '@react-pdf/renderer'
+import { LuDownload } from 'react-icons/lu'
 
 const fallbackDescription =
     'A passionate and dedicated Computer Science student with a strong foundation in software development and a keen interest in full-stack web development. Eager to apply my skills and knowledge in real-world projects and contribute to innovative solutions.'
@@ -26,7 +26,7 @@ const styles = StyleSheet.create({
         lineHeight: 1.45,
     },
     header: {
-        marginBottom: 18,
+        marginBottom: 16,
         alignItems: 'center',
     },
     name: {
@@ -45,11 +45,11 @@ const styles = StyleSheet.create({
     paragraph: {
         fontSize: 10,
         color: '#222222',
-        lineHeight: 1.55,
+        lineHeight: 1.5,
         marginBottom: 12,
     },
     section: {
-        marginBottom: 12,
+        marginBottom: 11,
     },
     sectionTitle: {
         fontSize: 11,
@@ -58,8 +58,8 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         borderBottomWidth: 1,
         borderBottomColor: '#000000',
-        paddingBottom: 4,
-        marginBottom: 8,
+        paddingBottom: 3,
+        marginBottom: 7,
         letterSpacing: 0.6,
     },
     row: {
@@ -76,7 +76,13 @@ const styles = StyleSheet.create({
     itemMeta: {
         fontSize: 9,
         fontFamily: 'Georgia',
-        color: '#222222',
+        color: '#333333',
+    },
+    itemMetaBold: {
+        fontSize: 9,
+        fontFamily: 'Georgia',
+        fontWeight: 700,
+        color: '#000000',
     },
     itemMetaItalic: {
         fontSize: 10,
@@ -86,15 +92,15 @@ const styles = StyleSheet.create({
         color: '#222222',
     },
     itemSpacing: {
-        marginBottom: 8,
+        marginBottom: 7,
     },
     bulletList: {
-        marginTop: 4,
-        paddingLeft: 10,
+        marginTop: 3,
+        paddingLeft: 8,
     },
     bulletRow: {
         flexDirection: 'row',
-        marginBottom: 3,
+        marginBottom: 2.5,
     },
     bullet: {
         width: 8,
@@ -108,30 +114,13 @@ const styles = StyleSheet.create({
         lineHeight: 1.4,
     },
     skillBlock: {
-        marginBottom: 4,
+        marginBottom: 3.5,
         fontSize: 10,
         color: '#222222',
     },
     skillLabel: {
         fontFamily: 'Georgia',
         fontWeight: 700,
-    },
-    downloadButton: {
-        display: 'inline-block',
-        padding: '10px 14px',
-        borderRadius: 8,
-        fontSize: 14,
-        fontFamily: 'Georgia',
-        color: '#0F172A',
-        textDecoration: 'none',
-    },
-    downloadButtonDisabled: {
-        opacity: 0.65,
-    },
-    errorText: {
-        color: '#B91C1C',
-        fontSize: 12,
-        fontFamily: 'Georgia',
     },
 })
 
@@ -141,6 +130,7 @@ function joinContactParts(personal) {
 
 function bulletLines(text, fallbackText) {
     const source = text || fallbackText
+    if (!source) return []
     return String(source)
         .split('\n')
         .map((line) => line.trim())
@@ -163,41 +153,62 @@ function MyDocument({ data = {} }) {
     const experience = data.experience || []
     const projects = data.projects || []
     const skills = data.skills || []
+    const showExperience = data.showExperience !== false
+    const showProjects = data.showProjects !== false
 
     return (
         <Document>
             <Page size="A4" style={styles.page}>
+                {/* Header */}
                 <View style={styles.header}>
                     <Text style={styles.name}>{personal.fullName || 'FULL NAME'}</Text>
-                    <Text style={styles.contact}>{joinContactParts(personal).join(' | ')}</Text>
+                    {joinContactParts(personal).length > 0 && (
+                        <Text style={styles.contact}>{joinContactParts(personal).join(' | ')}</Text>
+                    )}
                 </View>
 
-                <Text style={styles.paragraph}>{description || fallbackDescription}</Text>
+                {/* Summary */}
+                {description ? (
+                    <Text style={styles.paragraph}>{description}</Text>
+                ) : (
+                    <Text style={styles.paragraph}>{fallbackDescription}</Text>
+                )}
 
-                <Section title="Education">
-                    {education.map((edu, index) => (
-                        <View key={`edu-${index}`} style={styles.itemSpacing}>
-                            <Text style={styles.itemTitle}>{edu.college || 'University Name'}</Text>
-                            <Text style={styles.itemMeta}>
-                                {[
-                                    edu.degree || 'B.Tech in Computer Science',
-                                    edu.year || 'May 2026',
-                                    edu.location || 'Location',
-                                ]
-                                    .filter(Boolean)
-                                    .join(' | ')}
-                            </Text>
-                        </View>
-                    ))}
-                </Section>
+                {/* Education */}
+                {education.length > 0 && (
+                    <Section title="Education">
+                        {education.map((edu, index) => {
+                            const rightMeta = [
+                                edu.cgpa ? `CGPA: ${edu.cgpa}` : '',
+                                edu.location || '',
+                            ]
+                                .filter(Boolean)
+                                .join(' • ')
 
-                {experience && experience.length > 0 && (
+                            return (
+                                <View key={`edu-${index}`} style={styles.itemSpacing}>
+                                    <View style={styles.row}>
+                                        <Text style={styles.itemTitle}>{edu.college || 'University Name'}</Text>
+                                        {edu.year ? <Text style={styles.itemMetaBold}>{edu.year}</Text> : null}
+                                    </View>
+                                    <View style={styles.row}>
+                                        <Text style={styles.itemMetaItalic}>{edu.degree || 'Degree'}</Text>
+                                        {rightMeta ? <Text style={styles.itemMeta}>{rightMeta}</Text> : null}
+                                    </View>
+                                </View>
+                            )
+                        })}
+                    </Section>
+                )}
+
+                {/* Experience (Non-destructive toggle supported) */}
+                {showExperience && experience && experience.length > 0 && (
                     <Section title="Experience">
                         {experience.map((job, index) => (
                             <View key={`exp-${index}`} style={styles.itemSpacing}>
                                 <View style={styles.row}>
                                     <Text style={styles.itemTitle}>{job.role || 'Job Title'}</Text>
-                                    <Text style={styles.itemTitle}>{job.duration || 'Jan 2024 - Present'}</Text>
+                                    {job.duration ? <Text style={styles.itemTitle}>{job.duration}</Text> : null}
                                 </View>
                                 <Text style={styles.itemMetaItalic}>{job.company || 'Company Name'}</Text>
                                 <View style={styles.bulletList}>
@@ -216,56 +227,66 @@ function MyDocument({ data = {} }) {
                     </Section>
                 )}
 
-                <Section title="Projects">
-                    {projects.map((project, index) => (
-                        <View key={`proj-${index}`} style={styles.itemSpacing}>
-                            <View style={styles.row}>
-                                <Text style={styles.itemTitle}>
-                                    {project.name || 'Project Name'}
-                                    {project.tools ? <Text style={styles.itemMetaItalic}> {' | '}{project.tools}</Text> : null}
-                                </Text>
-                                <Text style={styles.itemTitle}>{project.duration || 'Aug 2024'}</Text>
+                {/* Projects (Non-destructive toggle supported) */}
+                {showProjects && projects && projects.length > 0 && (
+                    <Section title="Projects">
+                        {projects.map((project, index) => (
+                            <View key={`proj-${index}`} style={styles.itemSpacing}>
+                                <View style={styles.row}>
+                                    <Text style={styles.itemTitle}>
+                                        {project.name || 'Project Name'}
+                                        {project.tools ? <Text style={styles.itemMetaItalic}> {' | '}{project.tools}</Text> : null}
+                                    </Text>
+                                    {project.duration ? <Text style={styles.itemTitle}>{project.duration}</Text> : null}
+                                </View>
+                                <View style={styles.bulletList}>
+                                    {bulletLines(
+                                        project.description,
+                                        'Built a full-stack application using modern web frameworks.'
+                                    ).map((bullet, bulletIndex) => (
+                                        <View key={`proj-${index}-bullet-${bulletIndex}`} style={styles.bulletRow}>
+                                            <Text style={styles.bullet}>•</Text>
+                                            <Text style={styles.bulletText}>{bullet}</Text>
+                                        </View>
+                                    ))}
+                                </View>
                             </View>
-                            <View style={styles.bulletList}>
-                                {bulletLines(
-                                    project.description,
-                                    'Built a full-stack application using MERN stack solving X problem.'
-                                ).map((bullet, bulletIndex) => (
-                                    <View key={`proj-${index}-bullet-${bulletIndex}`} style={styles.bulletRow}>
-                                        <Text style={styles.bullet}>•</Text>
-                                        <Text style={styles.bulletText}>{bullet}</Text>
-                                    </View>
-                                ))}
-                            </View>
-                        </View>
-                    ))}
-                </Section>
+                        ))}
+                    </Section>
+                )}
 
+                {/* Skills */}
                 <Section title="Technical Skills">
-                    {skills.length > 0 ? (
+                    {skills.length > 0 && (skills[0].Languages || skills[0].Frameworks || skills[0].Tools) ? (
                         skills.map((skillSet, index) => (
                             <View key={`skill-${index}`} style={styles.skillBlock}>
-                                <Text>
-                                    <Text style={styles.skillLabel}>Languages:</Text> {skillSet.Languages || ''}
-                                </Text>
-                                <Text>
-                                    <Text style={styles.skillLabel}>Frameworks:</Text> {skillSet.Frameworks || ''}
-                                </Text>
-                                <Text>
-                                    <Text style={styles.skillLabel}>Tools/Databases:</Text> {skillSet.Tools || ''}
-                                </Text>
+                                {skillSet.Languages && (
+                                    <Text>
+                                        <Text style={styles.skillLabel}>Languages: </Text>{skillSet.Languages}
+                                    </Text>
+                                )}
+                                {skillSet.Frameworks && (
+                                    <Text>
+                                        <Text style={styles.skillLabel}>Frameworks: </Text>{skillSet.Frameworks}
+                                    </Text>
+                                )}
+                                {skillSet.Tools && (
+                                    <Text>
+                                        <Text style={styles.skillLabel}>Tools/Databases: </Text>{skillSet.Tools}
+                                    </Text>
+                                )}
                             </View>
                         ))
                     ) : (
                         <View style={styles.skillBlock}>
                             <Text>
-                                <Text style={styles.skillLabel}>Languages:</Text> Java, JavaScript, TypeScript, HTML/CSS
+                                <Text style={styles.skillLabel}>Languages: </Text>Java, JavaScript, TypeScript, HTML/CSS
                             </Text>
                             <Text>
-                                <Text style={styles.skillLabel}>Frameworks:</Text> React, Node.js, Express, Next.js, Tailwind
+                                <Text style={styles.skillLabel}>Frameworks: </Text>React, Node.js, Express, Next.js, Tailwind
                             </Text>
                             <Text>
-                                <Text style={styles.skillLabel}>Tools/Databases:</Text> Git, MongoDB, Prisma, Supabase
+                                <Text style={styles.skillLabel}>Tools/Databases: </Text>Git, MongoDB, PostgreSQL, Docker
                             </Text>
                         </View>
                     )}
@@ -275,22 +296,31 @@ function MyDocument({ data = {} }) {
     )
 }
 
-export const PdfBuilder = ({ data }) => {
-    return (
-        <div className='m-2 w-fit rounded-md bg-slate-200 p-2 transition-all hover:bg-[#2b78eb] hover:text-white'>
-            <PDFDownloadLink
-                document={<MyDocument data={data} />}
-                fileName='resume.pdf'
-                style={styles.downloadButton}
-            >
-                {({ loading, error }) => {
-                    if (error) {
-                        return <span className="text-sm font-semibold text-red-700">PDF generation failed</span>
-                    }
+export const PdfBuilder = ({ data, buttonText = 'Download PDF', className = '' }) => {
+    const safeName = (data?.personalInfo?.fullName || 'Resume')
+        .trim()
+        .replace(/[^a-zA-Z0-9]+/g, '_')
+    const fileName = `${safeName || 'Resume'}_ATS_Resume.pdf`
 
-                    return <span style={loading ? styles.downloadButtonDisabled : undefined}>{loading ? 'Loading document...' : 'Download PDF'}</span>
-                }}
-            </PDFDownloadLink>
-        </div>
+    return (
+        <PDFDownloadLink
+            document={<MyDocument data={data} />}
+            fileName={fileName}
+            className={`inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 active:scale-[0.98] ${className}`}
+        >
+            {({ loading, error }) => {
+                if (error) {
+                    return <span className='text-xs font-semibold text-rose-200'>PDF Error</span>
+                }
+                return (
+                    <>
+                        <LuDownload className='text-base shrink-0' />
+                        <span>{loading ? 'Preparing PDF...' : buttonText}</span>
+                    </>
+                )
+            }}
+        </PDFDownloadLink>
     )
 }
+
+export default PdfBuilder

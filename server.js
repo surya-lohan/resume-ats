@@ -1,78 +1,80 @@
-import express, { json } from 'express'
+import express from 'express'
 import cors from 'cors'
-import multer from 'multer';
-import PdfParse from 'pdf-parse-new';
-import { SmartPDFParser } from 'pdf-parse-new';
-import dotenv from 'dotenv';
-import { Groq } from 'groq-sdk/client.js';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import multer from 'multer'
+import { SmartPDFParser } from 'pdf-parse-new'
+import dotenv from 'dotenv'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { OpenRouter } from '@openrouter/sdk'
 
-dotenv.config();
-const app = express();
+dotenv.config()
+const app = express()
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
-app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.static(path.join(__dirname, 'dist')))
 
-const smarParser = new SmartPDFParser();
-const grok = new Groq({
-    apiKey: process.env.GROK_API
-});
+const smarParser = new SmartPDFParser()
+const client = new OpenRouter({
+  apiKey: process.env.OPEN_ROUTER_API_KEY,
+})
 
-app.use(express.json());
-app.use(cors());
+app.use(express.json())
+app.use(cors())
 
-app.get("/helloText", (req, res) => {
-    res.send({
-        myResponse: "Hello world"
-    });
+app.get('/helloText', (req, res) => {
+  res.send({
+    myResponse: 'Hello world',
+  })
 })
 
 const storage = multer.memoryStorage({
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + "-" + file.originalname)
-    }
-});
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname)
+  },
+})
 
 const upload = multer({
-    fileFilter: (req, file, cb) => {
-        const allowed = [
-            "application/pdf",
-            "text/csv",
-            "image/png",
-            "image/jpeg"
-        ];
+  storage,
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      "application/pdf",
+      "text/csv",
+      "image/png",
+      "image/jpeg"
+    ];
 
-        if (allowed.includes(file.mimetype)) {
-            cb(null, true);
-        } else {
-            cb(new Error("Invalid file type"), false);
-        }
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type"), false);
     }
+  }
 });
 
 
 app.post("/uploadFile", upload.single("file"), async (req, res) => {
 
-    try {
-        if (!req.file) {
-            return res.status(404).json({
-                Error: "File not found"
-            })
-        }
+  try {
+    if (!req.file) {
+      return res.status(404).json({
+        Error: "File not found"
+      })
+    }
 
-        const pdfBuffer = req.file.buffer;
+    const pdfBuffer = req.file.buffer;
 
-        const pdfData = await smarParser.parse(pdfBuffer);
-        const resumeText = pdfData.text;
+    const pdfData = await smarParser.parse(pdfBuffer);
+    const resumeText = pdfData.text;
 
-        const chatCompletions = grok.chat.completions.create({
-            messages: [
-                {
-                    role: "system",
-                    content: `
+    const chatCompletions = await client.chat.send({
+      chatRequest: {
+        model: "nvidia/nemotron-3-ultra-550b-a55b:free",
+        messages: [
+          {
+            role: "system",
+            content: `
 You are ResumeDestroyer-9000 — a brutally honest, razor-sharp sarcastic AI resume evaluator 
 with the combined personality of a burned-out senior recruiter, a disappointed hiring manager, 
 and a stand-up comedian who moonlights in HR. You have reviewed over 500,000 resumes and your 
@@ -152,6 +154,14 @@ No "Here is your roast:". Just raw JSON, starting with { and ending with }.
 
 {
   "ats_score": <integer 0–100, calculated from rubric above>,
+  "section_scores": {
+    "keywords": <integer 0–25>,
+    "formatting": <integer 0–20>,
+    "quantified_impact": <integer 0–20>,
+    "completeness": <integer 0–15>,
+    "trajectory": <integer 0–10>,
+    "readability": <integer 0–10>
+  },
   "brutal_roast": "<2–4 sentence savage but accurate roast paragraph>",
   "red_flags": [
     "<specific, concrete problem observed in the resume>",
@@ -185,51 +195,53 @@ Step 6 — Write the brutal_roast last, after you know the full picture. It shou
 Step 7 — Assemble and return the JSON object. Nothing else.
 
 `
-                },
-                {
-                    role: "user",
-                    content: `Roast this resume. Here is the full resume text: ${resumeText}`
-                },
+          },
+          {
+            role: "user",
+            content: `Roast this resume.${req.body?.targetRole ? ` Target Role / Context: "${req.body.targetRole}".` : ''} Here is the full resume text: ${resumeText}`
+          },
 
-            ],
-            model: "llama-3.3-70b-versatile",
-            response_format: { type: "json_object" },
-            temperature: 0.2,
-            max_completion_tokens: 1500
-        })
+        ],
+      },
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+      max_completion_tokens: 3000
+    })
 
-        const roastedText = (await chatCompletions).choices[0]?.message.content || "No response"
+    const roastedText = (chatCompletions).choices[0]?.message.content || "No response"
 
-        res.json({
-            message: "Resume roasted succesefully",
-            roast: roastedText,
-            resumeData: resumeText
-        })
+    res.json({
+      message: "Resume roasted succesefully",
+      roast: roastedText,
+      resumeData: resumeText
+    })
 
-    } catch (error) {
-        console.error("Error generating text", error);
-        res.status(500).json({ error: "Something broke." });
-    }
+  } catch (error) {
+    console.error("Error generating text", error);
+    res.status(500).json({ error: "Something broke." });
+  }
 
 })
 
 app.post('/scanResume', upload.single("file"), async (req, res) => {
-    try {
-        if (!req.file) {
-            res.status(404).json({
-                message: "Please select the right file!"
-            })
-        }
+  try {
+    if (!req.file) {
+      res.status(404).json({
+        message: "Please select the right file!"
+      })
+    }
 
-        const pdfBuffer = req.file.buffer;
-        const pdfData = await smarParser.parse(pdfBuffer);
-        const resumeText = pdfData.text;
+    const pdfBuffer = req.file.buffer;
+    const pdfData = await smarParser.parse(pdfBuffer);
+    const resumeText = pdfData.text;
 
-        const chatCompletions = grok.chat.completions.create({
-            messages: [
-                {
-                    role: "system",
-                    content: `You are an expert Applicant Tracking System (ATS) data parser. Your task is to extract information from the provided unstructured resume text and output it STRICTLY as a valid JSON object. 
+    const chatCompletions = await client.chat.send({
+      chatRequest: {
+        model: "nvidia/nemotron-3-ultra-550b-a55b:free",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert Applicant Tracking System (ATS) data parser. Your task is to extract information from the provided unstructured resume text and output it STRICTLY as a valid JSON object. 
 CRITICAL INSTRUCTIONS:
 1. Output ONLY valid JSON. Do not include any conversational text, greetings, explanations, or markdown formatting (do not use \`\`\`json backticks). 
 2. You must strictly adhere to the exact JSON schema provided below. Do not add, remove, or rename any keys.
@@ -248,7 +260,7 @@ REQUIRED JSON SCHEMA:
     "description": ""
   },
   "education": [
-    { "college": "", "degree": "", "year": "", "cgpa": "" }
+    { "college": "", "degree": "", "year": "", "cgpa": "", "location": "" }
   ],
   "experience": [
     { "company": "", "role": "", "description": "", "duration": "" }
@@ -260,37 +272,37 @@ REQUIRED JSON SCHEMA:
     { "Languages": "", "Frameworks": "", "Tools": "" }
   ]
 }`
-                },
-                {
-                    role: "user",
-                    content: `Here is the raw text of the resume. Parse it: ${resumeText}`
-                }
-            ],
-            model: "llama-3.3-70b-versatile",
-            response_format: { type: "json_object" },
-            temperature: 0.2,
-            max_completion_tokens: 1500
-        });
+          },
+          {
+            role: "user",
+            content: `Here is the raw text of the resume. Parse it: ${resumeText}`
+          }
+        ]
+      },
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+      max_completion_tokens: 1500
+    });
 
-        const parsedData = (await chatCompletions).choices[0]?.message.content || "{}";
+    const parsedData = (chatCompletions).choices[0]?.message.content || "{}";
 
-        res.json({
-            message: "Resume scanned successfully",
-            data: parsedData
-        });
+    res.json({
+      message: "Resume scanned successfully",
+      data: parsedData
+    });
 
-    } catch (error) {
-        console.error("Error parsing resume", error);
-        res.status(500).json({ error: "Something broke." });
-    }
+  } catch (error) {
+    console.error("Error parsing resume", error);
+    res.status(500).json({ error: "Something broke." });
+  }
 })
 
 app.use(/\/.*/, (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });

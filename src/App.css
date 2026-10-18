@@ -8,13 +8,14 @@
 html,
 body,
 #root {
+    height: 100%;
     min-height: 100%;
 }
 
 body {
     margin: 0;
-    background: #F5F8FF;
-    color: #0F2260;
+    background: #F1F5F9;
+    color: #0F172A;
     overflow-x: clip;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -27,15 +28,6 @@ select {
     font: inherit;
 }
 
-button {
-    min-height: 44px;
-}
-
-input,
-textarea,
-select {
-    min-height: 44px;
-}
 
 img,
 video,

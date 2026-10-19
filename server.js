@@ -403,7 +403,7 @@ REQUIRED JSON SCHEMA:
           }
         ],
         response_format: { type: "json_object" },
-        temperature: 0.2,
+        temperature: 0,
         max_completion_tokens: 3000
       }
     })

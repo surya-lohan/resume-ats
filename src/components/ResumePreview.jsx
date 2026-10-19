@@ -33,9 +33,8 @@ export default function ResumePreview({ data }) {
                     <button
                         type='button'
                         onClick={() => setZoom('75')}
-                        className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
-                            zoom === '75' ? 'bg-white text-indigo-600 shadow-xs font-semibold' : 'hover:text-slate-900'
-                        }`}
+                        className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${zoom === '75' ? 'bg-white text-indigo-600 shadow-xs font-semibold' : 'hover:text-slate-900'
+                            }`}
                         title='75% Zoom'
                     >
                         75%
@@ -43,9 +42,8 @@ export default function ResumePreview({ data }) {
                     <button
                         type='button'
                         onClick={() => setZoom('90')}
-                        className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
-                            zoom === '90' ? 'bg-white text-indigo-600 shadow-xs font-semibold' : 'hover:text-slate-900'
-                        }`}
+                        className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${zoom === '90' ? 'bg-white text-indigo-600 shadow-xs font-semibold' : 'hover:text-slate-900'
+                            }`}
                         title='90% Zoom'
                     >
                         90%
@@ -53,9 +51,8 @@ export default function ResumePreview({ data }) {
                     <button
                         type='button'
                         onClick={() => setZoom('100')}
-                        className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
-                            zoom === '100' ? 'bg-white text-indigo-600 shadow-xs font-semibold' : 'hover:text-slate-900'
-                        }`}
+                        className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${zoom === '100' ? 'bg-white text-indigo-600 shadow-xs font-semibold' : 'hover:text-slate-900'
+                            }`}
                         title='100% Zoom'
                     >
                         100%
@@ -63,9 +60,8 @@ export default function ResumePreview({ data }) {
                     <button
                         type='button'
                         onClick={() => setZoom('fit')}
-                        className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition ${
-                            zoom === 'fit' ? 'bg-white text-indigo-600 shadow-xs font-semibold' : 'hover:text-slate-900'
-                        }`}
+                        className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition ${zoom === 'fit' ? 'bg-white text-indigo-600 shadow-xs font-semibold' : 'hover:text-slate-900'
+                            }`}
                         title='Fit to Pane'
                     >
                         <LuMaximize2 className='text-[11px]' />

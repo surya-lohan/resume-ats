@@ -1,5 +1,6 @@
 import { PDFDownloadLink, Document, Page, StyleSheet, Text, View, Font } from '@react-pdf/renderer'
 import { LuDownload } from 'react-icons/lu'
+import { normalizeSkills } from '../constants/resumeData'
 
 const fallbackDescription =
     'A passionate and dedicated Computer Science student with a strong foundation in software development and a keen interest in full-stack web development. Eager to apply my skills and knowledge in real-world projects and contribute to innovative solutions.'
@@ -103,12 +104,14 @@ const styles = StyleSheet.create({
         marginBottom: 2.5,
     },
     bullet: {
-        width: 8,
+        width: 10,
         fontSize: 10,
         lineHeight: 1.4,
     },
-    bulletText: {
+    bulletContent: {
         flex: 1,
+    },
+    bulletText: {
         fontSize: 10,
         color: '#222222',
         lineHeight: 1.4,
@@ -140,7 +143,7 @@ function bulletLines(text, fallbackText) {
 function Section({ title, children }) {
     return (
         <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{title}</Text>
+            <Text style={styles.sectionTitle} minPresenceAhead={25}>{title}</Text>
             {children}
         </View>
     )
@@ -153,8 +156,34 @@ function MyDocument({ data = {} }) {
     const experience = data.experience || []
     const projects = data.projects || []
     const skills = data.skills || []
+    const skillList = normalizeSkills(skills).filter(
+        (s) => (s.name && s.name.trim()) || (s.value && s.value.trim())
+    )
     const showExperience = data.showExperience !== false
     const showProjects = data.showProjects !== false
+    const showAchievements = data.showAchievements !== false
+    const showCertifications = data.showCertifications !== false && data.showCertification !== false
+
+    const achievementsList = Array.isArray(data.achievements)
+        ? data.achievements.filter(Boolean)
+        : (typeof data.achievements === 'string'
+            ? data.achievements.split('\n').map((l) => l.trim()).filter(Boolean)
+            : [])
+
+    const certRaw = data.certifications || data.certification
+    const certificationsList = Array.isArray(certRaw)
+        ? certRaw
+            .map((c) =>
+                typeof c === 'string'
+                    ? c
+                    : c?.name
+                    ? `${c.name}${c.issuer ? ` — ${c.issuer}` : ''}${c.date ? ` (${c.date})` : ''}`
+                    : ''
+            )
+            .filter(Boolean)
+        : (typeof certRaw === 'string'
+            ? certRaw.split('\n').map((l) => l.trim()).filter(Boolean)
+            : [])
 
     return (
         <Document>
@@ -205,7 +234,7 @@ function MyDocument({ data = {} }) {
                 {showExperience && experience && experience.length > 0 && (
                     <Section title="Experience">
                         {experience.map((job, index) => (
-                            <View key={`exp-${index}`} style={styles.itemSpacing}>
+                            <View key={`exp-${index}`} style={styles.itemSpacing} wrap={false}>
                                 <View style={styles.row}>
                                     <Text style={styles.itemTitle}>{job.role || 'Job Title'}</Text>
                                     {job.duration ? <Text style={styles.itemTitle}>{job.duration}</Text> : null}
@@ -216,9 +245,11 @@ function MyDocument({ data = {} }) {
                                         job.description,
                                         'Developed and maintained web applications using React and Node.js.'
                                     ).map((bullet, bulletIndex) => (
-                                        <View key={`exp-${index}-bullet-${bulletIndex}`} style={styles.bulletRow}>
+                                        <View key={`exp-${index}-bullet-${bulletIndex}`} style={styles.bulletRow} wrap={false}>
                                             <Text style={styles.bullet}>•</Text>
-                                            <Text style={styles.bulletText}>{bullet}</Text>
+                                            <View style={styles.bulletContent}>
+                                                <Text style={styles.bulletText}>{bullet.replace(/^[•\-\*]\s*/, '').trim()}</Text>
+                                            </View>
                                         </View>
                                     ))}
                                 </View>
@@ -231,22 +262,30 @@ function MyDocument({ data = {} }) {
                 {showProjects && projects && projects.length > 0 && (
                     <Section title="Projects">
                         {projects.map((project, index) => (
-                            <View key={`proj-${index}`} style={styles.itemSpacing}>
+                            <View key={`proj-${index}`} style={styles.itemSpacing} wrap={false}>
                                 <View style={styles.row}>
-                                    <Text style={styles.itemTitle}>
+                                    <Text style={[styles.itemTitle, { flex: 1, paddingRight: 8 }]}>
                                         {project.name || 'Project Name'}
-                                        {project.tools ? <Text style={styles.itemMetaItalic}> {' | '}{project.tools}</Text> : null}
+                                        {project.tools ? (
+                                            <Text style={styles.itemMetaItalic}>
+                                                {' | '}{project.tools.trim()}
+                                            </Text>
+                                        ) : null}
                                     </Text>
-                                    {project.duration ? <Text style={styles.itemTitle}>{project.duration}</Text> : null}
+                                    {project.duration ? (
+                                        <Text style={[styles.itemTitle, { flexShrink: 0 }]}>{project.duration}</Text>
+                                    ) : null}
                                 </View>
                                 <View style={styles.bulletList}>
                                     {bulletLines(
                                         project.description,
                                         'Built a full-stack application using modern web frameworks.'
                                     ).map((bullet, bulletIndex) => (
-                                        <View key={`proj-${index}-bullet-${bulletIndex}`} style={styles.bulletRow}>
+                                        <View key={`proj-${index}-bullet-${bulletIndex}`} style={styles.bulletRow} wrap={false}>
                                             <Text style={styles.bullet}>•</Text>
-                                            <Text style={styles.bulletText}>{bullet}</Text>
+                                            <View style={styles.bulletContent}>
+                                                <Text style={styles.bulletText}>{bullet.replace(/^[•\-\*]\s*/, '').trim()}</Text>
+                                            </View>
                                         </View>
                                     ))}
                                 </View>
@@ -257,40 +296,63 @@ function MyDocument({ data = {} }) {
 
                 {/* Skills */}
                 <Section title="Technical Skills">
-                    {skills.length > 0 && (skills[0].Languages || skills[0].Frameworks || skills[0].Tools) ? (
-                        skills.map((skillSet, index) => (
-                            <View key={`skill-${index}`} style={styles.skillBlock}>
-                                {skillSet.Languages && (
-                                    <Text>
-                                        <Text style={styles.skillLabel}>Languages: </Text>{skillSet.Languages}
-                                    </Text>
-                                )}
-                                {skillSet.Frameworks && (
-                                    <Text>
-                                        <Text style={styles.skillLabel}>Frameworks: </Text>{skillSet.Frameworks}
-                                    </Text>
-                                )}
-                                {skillSet.Tools && (
-                                    <Text>
-                                        <Text style={styles.skillLabel}>Tools/Databases: </Text>{skillSet.Tools}
-                                    </Text>
-                                )}
-                            </View>
-                        ))
+                    {skillList.length > 0 ? (
+                        <View style={styles.skillBlock}>
+                            {skillList.map((skill, index) => (
+                                <Text key={`skill-${index}`} style={{ marginBottom: 2 }}>
+                                    {skill.name?.trim() ? (
+                                        <Text style={styles.skillLabel}>{skill.name.trim()}: </Text>
+                                    ) : null}
+                                    {skill.value}
+                                </Text>
+                            ))}
+                        </View>
                     ) : (
                         <View style={styles.skillBlock}>
-                            <Text>
+                            <Text style={{ marginBottom: 2 }}>
                                 <Text style={styles.skillLabel}>Languages: </Text>Java, JavaScript, TypeScript, HTML/CSS
                             </Text>
-                            <Text>
+                            <Text style={{ marginBottom: 2 }}>
                                 <Text style={styles.skillLabel}>Frameworks: </Text>React, Node.js, Express, Next.js, Tailwind
                             </Text>
-                            <Text>
+                            <Text style={{ marginBottom: 2 }}>
                                 <Text style={styles.skillLabel}>Tools/Databases: </Text>Git, MongoDB, PostgreSQL, Docker
                             </Text>
                         </View>
                     )}
                 </Section>
+
+                {/* Achievements */}
+                {showAchievements && achievementsList.length > 0 && (
+                    <Section title="Key Achievements">
+                        <View style={styles.bulletList}>
+                            {achievementsList.map((item, index) => (
+                                <View key={`achieve-${index}`} style={styles.bulletRow} wrap={false}>
+                                    <Text style={styles.bullet}>•</Text>
+                                    <View style={styles.bulletContent}>
+                                        <Text style={styles.bulletText}>{item.replace(/^[•\-\*]\s*/, '').trim()}</Text>
+                                    </View>
+                                </View>
+                            ))}
+                        </View>
+                    </Section>
+                )}
+
+                {/* Certifications */}
+                {showCertifications && certificationsList.length > 0 && (
+                    <Section title="Certifications">
+                        <View style={styles.bulletList}>
+                            {certificationsList.map((item, index) => (
+                                <View key={`cert-${index}`} style={styles.bulletRow} wrap={false}>
+                                    <Text style={styles.bullet}>•</Text>
+                                    <View style={styles.bulletContent}>
+                                        <Text style={styles.bulletText}>{item.replace(/^[•\-\*]\s*/, '').trim()}</Text>
+                                    </View>
+                                </View>
+                            ))}
+                        </View>
+                    </Section>
+                )}
             </Page>
         </Document>
     )

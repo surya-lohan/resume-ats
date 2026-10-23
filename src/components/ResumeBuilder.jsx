@@ -20,11 +20,13 @@ import {
     LuAlignLeft,
     LuCheck,
     LuInfo,
+    LuTrophy,
+    LuAward,
 } from 'react-icons/lu'
 import ResumePreview from './ResumePreview'
 import { PdfBuilder } from './PdfBuilder'
 import axios from 'axios'
-import { SAMPLE_RESUME, EMPTY_RESUME } from '../constants/resumeData'
+import { SAMPLE_RESUME, EMPTY_RESUME, normalizeSkills } from '../constants/resumeData'
 
 export const ResumeBuilder = ({ initialData = null, onSavedStatusChange = () => { } }) => {
     const fileInputRef = useRef(null)
@@ -42,6 +44,8 @@ export const ResumeBuilder = ({ initialData = null, onSavedStatusChange = () => 
         experience: true,
         projects: true,
         skills: true,
+        achievements: true,
+        certifications: true,
     })
 
     const toggleSection = (section) => {
@@ -50,17 +54,24 @@ export const ResumeBuilder = ({ initialData = null, onSavedStatusChange = () => 
 
     // Determine initial form data (Prop > LocalStorage > Sample data)
     const getInitialValues = () => {
-        if (initialData) return initialData
-        try {
-            const saved = localStorage.getItem('resume_studio_draft')
-            if (saved) {
-                const parsed = JSON.parse(saved)
-                if (parsed?.personalInfo) return parsed
+        let initial = SAMPLE_RESUME
+        if (initialData) {
+            initial = initialData
+        } else {
+            try {
+                const saved = localStorage.getItem('resume_studio_draft')
+                if (saved) {
+                    const parsed = JSON.parse(saved)
+                    if (parsed?.personalInfo) initial = parsed
+                }
+            } catch {
+                // fallback
             }
-        } catch {
-            // fallback
         }
-        return SAMPLE_RESUME
+        return {
+            ...initial,
+            skills: normalizeSkills(initial?.skills),
+        }
     }
 
     const { register, control, watch, reset, setValue } = useForm({
@@ -70,6 +81,8 @@ export const ResumeBuilder = ({ initialData = null, onSavedStatusChange = () => 
     const liveResumeData = watch()
     const showExperience = liveResumeData.showExperience !== false
     const showProjects = liveResumeData.showProjects !== false
+    const showAchievements = liveResumeData.showAchievements !== false
+    const showCertifications = liveResumeData.showCertifications !== false
 
     // Auto-save to localStorage with 400ms debounce
     useEffect(() => {
@@ -87,7 +100,10 @@ export const ResumeBuilder = ({ initialData = null, onSavedStatusChange = () => 
     // Update if initialData prop arrives (e.g. from Roaster fix bridge)
     useEffect(() => {
         if (initialData) {
-            reset(initialData)
+            reset({
+                ...initialData,
+                skills: normalizeSkills(initialData.skills),
+            })
         }
     }, [initialData, reset])
 
@@ -113,7 +129,12 @@ export const ResumeBuilder = ({ initialData = null, onSavedStatusChange = () => 
         swap: swapProject,
     } = useFieldArray({ control, name: 'projects' })
 
-    const { fields: skillFields } = useFieldArray({ control, name: 'skills' })
+    const {
+        fields: skillFields,
+        append: appendSkill,
+        remove: removeSkill,
+        swap: swapSkill,
+    } = useFieldArray({ control, name: 'skills' })
 
     // Scan PDF file
     const handlePdfSelect = async (e) => {
@@ -143,9 +164,17 @@ export const ResumeBuilder = ({ initialData = null, onSavedStatusChange = () => 
                 education: parsed.education?.length ? parsed.education : EMPTY_RESUME.education,
                 experience: parsed.experience?.length ? parsed.experience : EMPTY_RESUME.experience,
                 projects: parsed.projects?.length ? parsed.projects : EMPTY_RESUME.projects,
-                skills: parsed.skills?.length ? parsed.skills : EMPTY_RESUME.skills,
+                skills: normalizeSkills(parsed.skills?.length ? parsed.skills : EMPTY_RESUME.skills),
+                achievements: Array.isArray(parsed.achievements)
+                    ? parsed.achievements.join('\n')
+                    : (parsed.achievements || EMPTY_RESUME.achievements || ''),
+                certifications: Array.isArray(parsed.certifications || parsed.certification)
+                    ? (parsed.certifications || parsed.certification).join('\n')
+                    : (parsed.certifications || parsed.certification || EMPTY_RESUME.certifications || ''),
                 showExperience: true,
                 showProjects: true,
+                showAchievements: true,
+                showCertifications: true,
             }
 
             reset(merged)
@@ -163,14 +192,20 @@ export const ResumeBuilder = ({ initialData = null, onSavedStatusChange = () => 
     }
 
     const loadSampleData = () => {
-        reset(SAMPLE_RESUME)
+        reset({
+            ...SAMPLE_RESUME,
+            skills: normalizeSkills(SAMPLE_RESUME.skills),
+        })
         setScanSuccess('Loaded Software Engineer sample data.')
         setTimeout(() => setScanSuccess(''), 3000)
     }
 
     const clearForm = () => {
         if (window.confirm('Are you sure you want to clear all form fields?')) {
-            reset(EMPTY_RESUME)
+            reset({
+                ...EMPTY_RESUME,
+                skills: normalizeSkills(EMPTY_RESUME.skills),
+            })
             setScanSuccess('Cleared all fields.')
             setTimeout(() => setScanSuccess(''), 3000)
         }
@@ -845,8 +880,13 @@ export const ResumeBuilder = ({ initialData = null, onSavedStatusChange = () => 
                                     <LuWrench className='text-base' />
                                 </div>
                                 <div>
-                                    <h3 className='text-sm font-semibold text-slate-900'>Technical Skills</h3>
-                                    <p className='text-xs text-slate-500'>Categorized technical toolset & proficiencies</p>
+                                    <div className='flex items-center gap-2'>
+                                        <h3 className='text-sm font-semibold text-slate-900'>Technical Skills</h3>
+                                        <span className='rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600'>
+                                            {skillFields.length}
+                                        </span>
+                                    </div>
+                                    <p className='text-xs text-slate-500'>Customizable skill fields & toolsets</p>
                                 </div>
                             </div>
                             <LuChevronDown
@@ -859,35 +899,251 @@ export const ResumeBuilder = ({ initialData = null, onSavedStatusChange = () => 
                         {openSections.skills && (
                             <div className='border-t border-slate-100 p-4 space-y-3.5'>
                                 {skillFields.map((field, index) => (
-                                    <div key={field.id} className='space-y-3'>
-                                        <div>
-                                            <label className='mb-1 block text-xs font-semibold text-slate-700'>Languages (Comma separated)</label>
-                                            <input
-                                                {...register(`skills.${index}.Languages`)}
-                                                placeholder='e.g. TypeScript, JavaScript, Python, Go, SQL, HTML/CSS'
-                                                className='w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/15'
-                                            />
+                                    <div
+                                        key={field.id}
+                                        className='rounded-xl border border-slate-200/90 bg-slate-50/40 p-3.5 transition hover:border-slate-300 space-y-3'
+                                    >
+                                        <div className='flex items-center justify-between border-b border-slate-200/60 pb-2 text-xs'>
+                                            <span className='font-semibold text-slate-700'>
+                                                #{index + 1} {liveResumeData.skills?.[index]?.name || 'Skill Field'}
+                                            </span>
+                                            <div className='flex items-center gap-1'>
+                                                {index > 0 && (
+                                                    <button
+                                                        type='button'
+                                                        onClick={() => swapSkill(index, index - 1)}
+                                                        className='rounded p-1 text-slate-400 hover:bg-white hover:text-slate-700'
+                                                        title='Move Up'
+                                                    >
+                                                        <LuArrowUp className='text-xs' />
+                                                    </button>
+                                                )}
+                                                {index < skillFields.length - 1 && (
+                                                    <button
+                                                        type='button'
+                                                        onClick={() => swapSkill(index, index + 1)}
+                                                        className='rounded p-1 text-slate-400 hover:bg-white hover:text-slate-700'
+                                                        title='Move Down'
+                                                    >
+                                                        <LuArrowDown className='text-xs' />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    type='button'
+                                                    onClick={() => removeSkill(index)}
+                                                    className='rounded p-1 text-rose-500 hover:bg-rose-50 hover:text-rose-700'
+                                                    title='Remove Field'
+                                                >
+                                                    <LuTrash2 className='text-xs' />
+                                                </button>
+                                            </div>
                                         </div>
 
-                                        <div>
-                                            <label className='mb-1 block text-xs font-semibold text-slate-700'>Frameworks & Libraries</label>
-                                            <input
-                                                {...register(`skills.${index}.Frameworks`)}
-                                                placeholder='e.g. React, Next.js, Node.js, Express, Tailwind CSS, Fastify'
-                                                className='w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/15'
-                                            />
-                                        </div>
+                                        <div className='grid grid-cols-1 gap-2.5 sm:grid-cols-3'>
+                                            <div className='sm:col-span-1'>
+                                                <label className='mb-1 block text-xs font-semibold text-slate-700'>
+                                                    Field Name
+                                                </label>
+                                                <input
+                                                    {...register(`skills.${index}.name`)}
+                                                    placeholder='e.g. Languages'
+                                                    className='w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/15 font-medium'
+                                                />
+                                            </div>
 
-                                        <div>
-                                            <label className='mb-1 block text-xs font-semibold text-slate-700'>Developer Tools, Cloud & Databases</label>
-                                            <input
-                                                {...register(`skills.${index}.Tools`)}
-                                                placeholder='e.g. Docker, Kubernetes, AWS, PostgreSQL, Redis, Git, Kafka'
-                                                className='w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/15'
-                                            />
+                                            <div className='sm:col-span-2'>
+                                                <label className='mb-1 block text-xs font-semibold text-slate-700'>
+                                                    Skills / Values (Comma separated)
+                                                </label>
+                                                <input
+                                                    {...register(`skills.${index}.value`)}
+                                                    placeholder='e.g. TypeScript, JavaScript, Python, Go, SQL'
+                                                    className='w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/15'
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
+
+                                {skillFields.length === 0 && (
+                                    <div className='rounded-lg border border-dashed border-slate-200 p-4 text-center text-xs text-slate-500'>
+                                        No skill fields added yet. Click &quot;Add Skill Field&quot; below to add one.
+                                    </div>
+                                )}
+
+                                <div className='space-y-2 pt-1'>
+                                    <button
+                                        type='button'
+                                        onClick={() => appendSkill({ name: '', value: '' })}
+                                        className='inline-flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-teal-300 bg-teal-50/50 py-2.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-50'
+                                    >
+                                        <LuPlus className='text-sm' />
+                                        <span>Add Skill Field</span>
+                                    </button>
+
+                                    <div className='flex flex-wrap items-center gap-1.5 pt-1 text-xs text-slate-500'>
+                                        <span className='text-[11px] font-medium text-slate-400'>Quick presets:</span>
+                                        {['Languages', 'Frameworks', 'Databases', 'Cloud & DevOps', 'Tools'].map((preset) => (
+                                            <button
+                                                key={preset}
+                                                type='button'
+                                                onClick={() => appendSkill({ name: preset, value: '' })}
+                                                className='inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700'
+                                            >
+                                                <LuPlus className='text-[10px]' />
+                                                {preset}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* SECTION 7: Key Achievements */}
+                    <div className='rounded-xl border border-slate-200 bg-white shadow-2xs transition-all'>
+                        <div className='flex w-full items-center justify-between px-4 py-3.5 transition hover:bg-slate-50/80'>
+                            <button
+                                type='button'
+                                onClick={() => toggleSection('achievements')}
+                                className='flex flex-1 items-center gap-2.5 text-left'
+                            >
+                                <div className='flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600'>
+                                    <LuTrophy className='text-base' />
+                                </div>
+                                <div>
+                                    <div className='flex items-center gap-2'>
+                                        <h3 className='text-sm font-semibold text-slate-900'>Key Achievements</h3>
+                                        <span className='rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600'>
+                                            Optional
+                                        </span>
+                                    </div>
+                                    <p className='text-xs text-slate-500'>Honors, hackathons, academic or career awards</p>
+                                </div>
+                            </button>
+
+                            {/* Non-destructive toggle switch */}
+                            <div className='flex items-center gap-3'>
+                                <label className='flex cursor-pointer items-center gap-2 text-xs text-slate-600' title='Toggle section visibility in resume'>
+                                    <input
+                                        type='checkbox'
+                                        checked={showAchievements}
+                                        onChange={(e) => setValue('showAchievements', e.target.checked)}
+                                        className='h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500'
+                                    />
+                                    <span className='hidden sm:inline font-medium text-slate-600'>Include</span>
+                                </label>
+                                <button
+                                    type='button'
+                                    onClick={() => toggleSection('achievements')}
+                                    className='p-1 text-slate-400'
+                                >
+                                    <LuChevronDown
+                                        className={`transition-transform duration-200 ${
+                                            openSections.achievements ? 'rotate-180' : ''
+                                        }`}
+                                    />
+                                </button>
+                            </div>
+                        </div>
+
+                        {openSections.achievements && (
+                            <div className='border-t border-slate-100 p-4 space-y-3'>
+                                {!showAchievements && (
+                                    <div className='rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800'>
+                                        Notice: Achievements section is currently hidden from the live preview and exported PDF.
+                                    </div>
+                                )}
+
+                                <div>
+                                    <div className='flex items-center justify-between mb-1 text-xs'>
+                                        <label className='font-semibold text-slate-700'>Achievements & Honors</label>
+                                        <span className='text-slate-400'>1 line = 1 bullet</span>
+                                    </div>
+                                    <textarea
+                                        {...register('achievements')}
+                                        rows={3}
+                                        placeholder='Winner of CalHacks 10.0 out of 400+ participating engineering teams...&#10;Selected among top 50 engineering fellows nationwide for Cloud Architecture Fellowship...'
+                                        className='w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/15'
+                                    />
+                                    <p className='mt-1 text-[11px] text-slate-400'>
+                                        Tip: Highlight competitions, awards, publications, or landmark milestones. Each new line will render as an individual bullet.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* SECTION 8: Certifications */}
+                    <div className='rounded-xl border border-slate-200 bg-white shadow-2xs transition-all'>
+                        <div className='flex w-full items-center justify-between px-4 py-3.5 transition hover:bg-slate-50/80'>
+                            <button
+                                type='button'
+                                onClick={() => toggleSection('certifications')}
+                                className='flex flex-1 items-center gap-2.5 text-left'
+                            >
+                                <div className='flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50 text-violet-600'>
+                                    <LuAward className='text-base' />
+                                </div>
+                                <div>
+                                    <div className='flex items-center gap-2'>
+                                        <h3 className='text-sm font-semibold text-slate-900'>Certifications</h3>
+                                        <span className='rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600'>
+                                            Optional
+                                        </span>
+                                    </div>
+                                    <p className='text-xs text-slate-500'>Industry credentials, professional licenses, and courses</p>
+                                </div>
+                            </button>
+
+                            {/* Non-destructive toggle switch */}
+                            <div className='flex items-center gap-3'>
+                                <label className='flex cursor-pointer items-center gap-2 text-xs text-slate-600' title='Toggle section visibility in resume'>
+                                    <input
+                                        type='checkbox'
+                                        checked={showCertifications}
+                                        onChange={(e) => setValue('showCertifications', e.target.checked)}
+                                        className='h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500'
+                                    />
+                                    <span className='hidden sm:inline font-medium text-slate-600'>Include</span>
+                                </label>
+                                <button
+                                    type='button'
+                                    onClick={() => toggleSection('certifications')}
+                                    className='p-1 text-slate-400'
+                                >
+                                    <LuChevronDown
+                                        className={`transition-transform duration-200 ${
+                                            openSections.certifications ? 'rotate-180' : ''
+                                        }`}
+                                    />
+                                </button>
+                            </div>
+                        </div>
+
+                        {openSections.certifications && (
+                            <div className='border-t border-slate-100 p-4 space-y-3'>
+                                {!showCertifications && (
+                                    <div className='rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800'>
+                                        Notice: Certifications section is currently hidden from the live preview and exported PDF.
+                                    </div>
+                                )}
+
+                                <div>
+                                    <div className='flex items-center justify-between mb-1 text-xs'>
+                                        <label className='font-semibold text-slate-700'>Certifications & Credentials</label>
+                                        <span className='text-slate-400'>1 line = 1 bullet</span>
+                                    </div>
+                                    <textarea
+                                        {...register('certifications')}
+                                        rows={3}
+                                        placeholder='AWS Certified Solutions Architect – Associate (Amazon Web Services, 2024)&#10;Certified Kubernetes Administrator (CKA) – Cloud Native Computing Foundation (2023)'
+                                        className='w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/15'
+                                    />
+                                    <p className='mt-1 text-[11px] text-slate-400'>
+                                        Tip: Include certification name, issuer, and completion date. Each new line will render as an individual bullet.
+                                    </p>
+                                </div>
                             </div>
                         )}
                     </div>

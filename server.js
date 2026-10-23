@@ -270,7 +270,9 @@ REQUIRED JSON SCHEMA:
   ],
   "skills": [
     { "Languages": "", "Frameworks": "", "Tools": "" }
-  ]
+  ],
+  "achievements": "",
+  "certifications": ""
 }`
           },
           {
@@ -394,7 +396,9 @@ REQUIRED JSON SCHEMA:
   ],
   "skills": [
     { "Languages": "", "Frameworks": "", "Tools": "" }
-  ]
+  ],
+  "achievements": "",
+  "certifications": ""
 }`
           },
           {

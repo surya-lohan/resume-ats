@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { LuMaximize2, LuFileText } from 'react-icons/lu'
+import { normalizeSkills } from '../constants/resumeData'
 
 export default function ResumePreview({ data }) {
     const [zoom, setZoom] = useState('fit') // '75', '90', '100', 'fit'
@@ -11,8 +12,34 @@ export default function ResumePreview({ data }) {
     const education = data?.education || []
     const projects = data?.projects || []
     const skills = data?.skills || []
+    const skillList = normalizeSkills(skills).filter(
+        (s) => (s.name && s.name.trim()) || (s.value && s.value.trim())
+    )
     const showExperience = data?.showExperience !== false
     const showProjects = data?.showProjects !== false
+    const showAchievements = data?.showAchievements !== false
+    const showCertifications = data?.showCertifications !== false && data?.showCertification !== false
+
+    const achievementsList = Array.isArray(data?.achievements)
+        ? data.achievements.filter(Boolean)
+        : (typeof data?.achievements === 'string'
+            ? data.achievements.split('\n').map((l) => l.trim()).filter(Boolean)
+            : [])
+
+    const certRaw = data?.certifications || data?.certification
+    const certificationsList = Array.isArray(certRaw)
+        ? certRaw
+            .map((c) =>
+                typeof c === 'string'
+                    ? c
+                    : c?.name
+                    ? `${c.name}${c.issuer ? ` — ${c.issuer}` : ''}${c.date ? ` (${c.date})` : ''}`
+                    : ''
+            )
+            .filter(Boolean)
+        : (typeof certRaw === 'string'
+            ? certRaw.split('\n').map((l) => l.trim()).filter(Boolean)
+            : [])
 
     const zoomScale = zoom === '75' ? 0.75 : zoom === '90' ? 0.9 : 1.0
 
@@ -193,19 +220,27 @@ export default function ResumePreview({ data }) {
 
                                 {projects.map((proj, index) => (
                                     <div key={index} className='mb-3'>
-                                        <div className='flex flex-col gap-0.5 text-sm font-bold text-black sm:flex-row sm:justify-between sm:gap-4'>
-                                            <span className='wrap-break-word'>
-                                                {proj.name || 'Project Name'}
-                                                {proj.tools && <span className='font-normal italic'> | {proj.tools}</span>}
-                                            </span>
-                                            {proj.duration && <span>{proj.duration}</span>}
+                                        <div className='flex flex-col gap-0.5 text-sm font-bold text-black sm:flex-row sm:justify-between sm:items-baseline sm:gap-4'>
+                                            <div className='min-w-0 flex-1 break-words'>
+                                                <span>{proj.name || 'Project Name'}</span>
+                                                {proj.tools && (
+                                                    <span className='font-normal italic text-gray-800'>
+                                                        {' | '}{proj.tools.trim()}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {proj.duration && (
+                                                <span className='shrink-0 whitespace-nowrap text-xs sm:text-sm font-bold text-black sm:text-right'>
+                                                    {proj.duration}
+                                                </span>
+                                            )}
                                         </div>
 
                                         <ul className='mt-1 ml-5 list-disc list-outside space-y-1 text-sm text-gray-800 leading-relaxed'>
                                             {proj.description ? (
                                                 proj.description
                                                     .split('\n')
-                                                    .map((bullet, i) => bullet.trim() && <li key={i}>{bullet}</li>)
+                                                    .map((bullet, i) => bullet.trim() && <li key={i}>{bullet.replace(/^[•\-\*]\s*/, '').trim()}</li>)
                                             ) : (
                                                 <li>Built a full-stack application using modern web frameworks solving key challenges.</li>
                                             )}
@@ -221,20 +256,17 @@ export default function ResumePreview({ data }) {
                                 Technical Skills
                             </h2>
                             <div className='text-sm leading-6 text-gray-800'>
-                                {skills.length > 0 && (skills[0].Languages || skills[0].Frameworks || skills[0].Tools) ? (
-                                    skills.map((skillSet, index) => (
-                                        <div key={index} className='mb-2 wrap-break-word space-y-1'>
-                                            {skillSet.Languages && (
-                                                <p><strong>Languages:</strong> {skillSet.Languages}</p>
-                                            )}
-                                            {skillSet.Frameworks && (
-                                                <p><strong>Frameworks:</strong> {skillSet.Frameworks}</p>
-                                            )}
-                                            {skillSet.Tools && (
-                                                <p><strong>Tools/Databases:</strong> {skillSet.Tools}</p>
-                                            )}
-                                        </div>
-                                    ))
+                                {skillList.length > 0 ? (
+                                    <div className='space-y-1'>
+                                        {skillList.map((skill, index) => (
+                                            <p key={index} className='break-words leading-relaxed'>
+                                                {skill.name?.trim() ? (
+                                                    <strong className='font-bold text-black'>{skill.name.trim()}: </strong>
+                                                ) : null}
+                                                <span>{skill.value}</span>
+                                            </p>
+                                        ))}
+                                    </div>
                                 ) : (
                                     <div className='space-y-1'>
                                         <p><strong>Languages:</strong> Java, JavaScript, TypeScript, HTML/CSS</p>
@@ -244,6 +276,34 @@ export default function ResumePreview({ data }) {
                                 )}
                             </div>
                         </div>
+
+                        {/* 6. ACHIEVEMENTS */}
+                        {showAchievements && achievementsList.length > 0 && (
+                            <div className='mb-4'>
+                                <h2 className='mb-2 border-b border-black pb-1 text-sm font-bold uppercase tracking-wider text-black'>
+                                    Key Achievements
+                                </h2>
+                                <ul className='ml-5 list-disc list-outside space-y-1 text-sm text-gray-800 leading-relaxed'>
+                                    {achievementsList.map((item, index) => (
+                                        <li key={index}>{item.replace(/^[•\-\*]\s*/, '').trim()}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* 7. CERTIFICATIONS */}
+                        {showCertifications && certificationsList.length > 0 && (
+                            <div className='mb-4'>
+                                <h2 className='mb-2 border-b border-black pb-1 text-sm font-bold uppercase tracking-wider text-black'>
+                                    Certifications
+                                </h2>
+                                <ul className='ml-5 list-disc list-outside space-y-1 text-sm text-gray-800 leading-relaxed'>
+                                    {certificationsList.map((item, index) => (
+                                        <li key={index}>{item.replace(/^[•\-\*]\s*/, '').trim()}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
